@@ -32,6 +32,32 @@ Given an error message or log snippet, the service:
 
 ---
 
+## Architecture
+
+```mermaid
+flowchart TD
+  DEV["Developer<br/>Local or GitHub"] -->|gcloud builds submit| CB["Cloud Build"]
+  CB --> AR["Artifact Registry<br/>Docker Image"]
+  AR -->|Deploy| CR["Cloud Run<br/>FastAPI RAG Debug Copilot"]
+
+  U["User or Client"] -->|POST /ask| CR
+  U -->|POST /search| CR
+  U -->|GET /health| CR
+
+  CR -->|Encode query| E["SentenceTransformers<br/>all-MiniLM-L6-v2"]
+  E -->|Vector embedding| F["FAISS Index<br/>data/processed"]
+  F -->|Top-k chunks| CR
+
+  CR -->|Prompt with evidence| V["Vertex AI<br/>Gemini"]
+  V -->|Structured JSON response| CR
+
+  CR -->|Fallback on failure| R["Rule-based<br/>Deterministic Logic"]
+  R --> CR
+
+  CR -->|Structured JSON logs| L["Cloud Logging"]
+  L --> M["Cloud Monitoring<br/>Latency p50/p95<br/>Fallback rate<br/>Error count"]
+```
+
 ## API Endpoints
 
 ### Health Check
